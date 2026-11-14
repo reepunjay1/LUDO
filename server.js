@@ -1,7 +1,7 @@
 // Ludo Royale - tiny free server: serves the app + relays room messages over WebSocket.
 const http=require('http'),fs=require('fs'),path=require('path');
 const {WebSocketServer}=require('ws');
-const PUB=path.join(__dirname,'public'),PORT=process.env.PORT||3000;
+const PUB=__dirname,PORT=process.env.PORT||3000;
 const TYPES={'.html':'text/html','.js':'text/javascript','.json':'application/json','.webmanifest':'application/manifest+json','.png':'image/png'};
 const server=http.createServer((req,res)=>{
   let p=decodeURIComponent(req.url.split('?')[0]);if(p==='/health'){res.end('ok');return}
