@@ -5,6 +5,10 @@ const PUB=__dirname,PORT=process.env.PORT||3000;
 const TYPES={'.html':'text/html','.js':'text/javascript','.json':'application/json','.webmanifest':'application/manifest+json','.png':'image/png'};
 const server=http.createServer((req,res)=>{
   let p=decodeURIComponent(req.url.split('?')[0]);if(p==='/health'){res.end('ok');return}
+  if(p==='/ice'){const E=process.env;
+    fetch('https://global.xirsys.net/_turn/'+E.XIRSYS_CHANNEL,{method:'PUT',headers:{Authorization:'Basic '+Buffer.from(E.XIRSYS_IDENT+':'+E.XIRSYS_SECRET).toString('base64'),'Content-Type':'application/json'},body:JSON.stringify({format:'urls'})})
+    .then(r=>r.json()).then(j=>{let s=j&&j.v&&j.v.iceServers;s=s?(Array.isArray(s)?s:[s]):[];res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify(s))})
+    .catch(()=>{res.writeHead(200,{'Content-Type':'application/json'});res.end('[]')});return}
   if(p==='/')p='/index.html';const f=path.join(PUB,path.normalize(p));
   if(!f.startsWith(PUB)){res.writeHead(403);return res.end()}
   fs.readFile(f,(e,d)=>{if(e){res.writeHead(404);return res.end('not found')}
