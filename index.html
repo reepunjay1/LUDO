@@ -309,16 +309,16 @@ function addChat(d){if(d&&typeof d.av==='string'){if(d.av.startsWith('data:image
 let stream=null,pcs={},auds={},spk=true,muted=false;
 let RTC={iceServers:[{urls:'stun:stun.l.google.com:19302'}]};fetch('/ice').then(r=>r.json()).then(a=>{if(Array.isArray(a)&&a.length)RTC={iceServers:a}}).catch(()=>{});
 const sig=o=>R&&R.emit('sig',{...o,from:me}).catch(()=>{});
-function mk(id){const pc=new RTCPeerConnection(RTC);pcs[id]=pc;pc.q=[];
-  pc.tx=pc.addTransceiver('audio',{direction:'sendrecv'});if(stream)pc.tx.sender.replaceTrack(stream.getAudioTracks()[0]);
+function mk(id,off){const pc=new RTCPeerConnection(RTC);pcs[id]=pc;pc.q=[];
+  if(off){pc.tx=pc.addTransceiver('audio',{direction:'sendrecv'});if(stream)pc.tx.sender.replaceTrack(stream.getAudioTracks()[0])}
   pc.onicecandidate=e=>e.candidate&&sig({t:'ice',to:id,c:e.candidate.toJSON()});
   pc.ontrack=e=>{const a=auds[id]||new Audio();a.autoplay=true;a.srcObject=e.streams[0]||new MediaStream([e.track]);meter(id,a.srcObject);a.muted=!spk;auds[id]=a;a.play().catch(()=>{})};
   pc.onconnectionstatechange=()=>{if(['failed','closed'].includes(pc.connectionState)){pc.close();delete pcs[id];if(auds[id]){auds[id].srcObject=null;delete auds[id]}}};
   return pc}
 async function onSig(d){if(!d||!voice||d.from===me||(d.to&&d.to!==me)||typeof d.from!=='string')return;const id=d.from;
   try{
-  if(d.t==='on'){if(!pcs[id]){if(me<id){const pc=mk(id);await pc.setLocalDescription(await pc.createOffer());sig({t:'offer',to:id,sdp:pc.localDescription.sdp})}else sig({t:'on',to:id})}}
-  else if(d.t==='offer'){const pc=pcs[id]||mk(id);await pc.setRemoteDescription({type:'offer',sdp:d.sdp});for(const c of pc.q)await pc.addIceCandidate(c);pc.q=[];await pc.setLocalDescription(await pc.createAnswer());sig({t:'ans',to:id,sdp:pc.localDescription.sdp})}
+  if(d.t==='on'){if(!pcs[id]){if(me<id){const pc=mk(id,1);await pc.setLocalDescription(await pc.createOffer());sig({t:'offer',to:id,sdp:pc.localDescription.sdp})}else sig({t:'on',to:id})}}
+  else if(d.t==='offer'){const pc=pcs[id]||mk(id);await pc.setRemoteDescription({type:'offer',sdp:d.sdp});if(!pc.tx){const x=pc.getTransceivers().find(t=>t.receiver.track.kind==='audio');if(x){pc.tx=x;x.direction='sendrecv';if(stream)x.sender.replaceTrack(stream.getAudioTracks()[0])}}for(const c of pc.q)await pc.addIceCandidate(c);pc.q=[];await pc.setLocalDescription(await pc.createAnswer());sig({t:'ans',to:id,sdp:pc.localDescription.sdp})}
   else if(d.t==='ans'){const pc=pcs[id];if(pc){await pc.setRemoteDescription({type:'answer',sdp:d.sdp});for(const c of pc.q)await pc.addIceCandidate(c);pc.q=[]}}
   else if(d.t==='ice'){const pc=pcs[id];if(pc){if(pc.remoteDescription)await pc.addIceCandidate(d.c);else pc.q.push(d.c)}}
   }catch(e){}}
