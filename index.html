@@ -307,7 +307,7 @@ function addChat(d){if(d&&typeof d.av==='string'){if(d.av.startsWith('data:image
 
 /* ---------- voice chat (WebRTC mesh, signalling through the room) ---------- */
 let stream=null,pcs={},auds={},spk=true,muted=false;
-const RTC={iceServers:[{urls:'stun:stun.l.google.com:19302'}]};
+let RTC={iceServers:[{urls:'stun:stun.l.google.com:19302'}]};fetch('/ice').then(r=>r.json()).then(a=>{if(Array.isArray(a)&&a.length)RTC={iceServers:a}}).catch(()=>{});
 const sig=o=>R&&R.emit('sig',{...o,from:me}).catch(()=>{});
 function mk(id){const pc=new RTCPeerConnection(RTC);pcs[id]=pc;pc.q=[];
   pc.tx=pc.addTransceiver('audio',{direction:'sendrecv'});if(stream)pc.tx.sender.replaceTrack(stream.getAudioTracks()[0]);
